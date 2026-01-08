@@ -8,34 +8,51 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 配置密码加密器
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 配置安全过滤链
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 禁用 CSRF (前后端分离通常不需要)
+                // 1. 禁用 CSRF
                 .csrf(AbstractHttpConfigurer::disable)
-                // 配置请求拦截
+                // 2. 启用 CORS，使用下面的 source
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // 3. 路径拦截
                 .authorizeHttpRequests(auth -> auth
-                        // 放行登录和注册接口
+                        // 必须放行 OPTIONS 请求 (预检)
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        // 放行登录注册
                         .requestMatchers("/auth/**").permitAll()
-                        // 放行静态资源 (如果有)
-                        .requestMatchers("/static/**").permitAll()
-                        // 其他所有请求都需要认证 (暂时先全部放行以便调试，后续会改为 authenticated())
-                        // .anyRequest().authenticated()
-                        .anyRequest().permitAll() // 【调试阶段：暂时允许所有访问，以免被 403 挡住】
+                        // 其他全部放行 (调试阶段) -> 生产环境改成 .authenticated()
+                        .anyRequest().permitAll()
                 );
-
         return http.build();
+    }
+
+    // 全局跨域配置
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // 允许所有来源 (Vue 代理过来其实是同源，但也加上保险)
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

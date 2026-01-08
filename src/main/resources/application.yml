@@ -4,27 +4,20 @@ server:
 spring:
   application:
     name: notebook-backend
-
-  # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 数据库名为 notebook_db，请先在 Navicat/MySQL 中创建该库
+    # 务必确认数据库名 notebook_db 和密码
     url: jdbc:mysql://localhost:3306/notebook_db?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: your_password_here  # 【请修改为你自己的数据库密码】
+    password: 12345678
 
-  # 解决 Spring Boot 2.6+ 循环依赖问题 (可选)
-  main:
-    allow-circular-references: true
-
-# MyBatis 配置
 mybatis:
-  mapper-locations: classpath:mapper/*.xml  # 扫描 XML 映射文件
-  type-aliases-package: com.stusym.entity # 实体类包别名
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.stusym.entity
   configuration:
-    map-underscore-to-camel-case: true    # 开启驼峰命名转换 (user_name -> userName)
+    map-underscore-to-camel-case: true
 
-# 日志配置
 logging:
   level:
-    com.stusym.mapper: debug  # 开发阶段打印 SQL 语句
+    com.stusym.mapper: debug
+    org.springframework.security: debug # 开启安全日志，方便排错
